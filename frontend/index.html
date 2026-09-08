@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KisanSetu-AI — Direct Farmer-to-Consumer & Bulk Logistics Platform</title>
+  <meta name="description" content="SIH 26033: Department of Consumer Affairs (DoCA) prototype eliminating agricultural intermediaries with AI Demand Forecasting and Multi-Stop Route Optimization." />
+
+  <!-- External Libraries: Leaflet for GIS Mapping, Chart.js for AI Forecasting -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+</head>
+<body>
+
+  <!-- Top Government & SIH Banner -->
+  <header class="gov-banner">
+    <div class="gov-banner-left">
+      <span class="sih-badge">SIH 26033</span>
+      <span>Ministry of Consumer Affairs, Food & Public Distribution • Dept. of Consumer Affairs (DoCA)</span>
+    </div>
+    <div class="live-indicator">
+      <span class="live-dot"></span>
+      <span>Live AI Direct Trade Grid</span>
+    </div>
+  </header>
+
+  <!-- Main Navigation Header -->
+  <nav class="main-header">
+    <a class="brand-logo-container" onclick="App.switchTab('marketplace')">
+      <div class="brand-icon">🌱</div>
+      <div class="brand-text">
+        <h1>KisanSetu<span>.AI</span></h1>
+        <div class="brand-tagline">Direct Farm-to-Buyer • 0% Middlemen • AI Logistics</div>
+      </div>
+    </a>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs" role="tablist">
+      <button type="button" class="nav-tab-btn active" data-tab="marketplace" id="nav-btn-marketplace">
+        🛒 Marketplace
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="farmer" id="nav-btn-farmer">
+        👨‍🌾 Farmer / FPO Portal
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="forecasting" id="nav-btn-forecasting">
+        📈 AI Forecasting
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="logistics" id="nav-btn-logistics">
+        🚚 Smart Route Optimizer
+      </button>
+      <button type="button" class="nav-tab-btn" data-tab="transparency" id="nav-btn-transparency">
+        ⚖️ Price Transparency
+      </button>
+    </div>
+
+    <!-- Header Right Actions: Role Selector & Cart Button -->
+    <div class="header-actions">
+      <div class="role-dropdown">
+        <select class="role-badge-select" id="global-role-select" title="Switch User Persona">
+          <option value="consumer">👤 Persona: Retail Consumer</option>
+          <option value="bulk">🏢 Persona: Bulk Buyer (B2B)</option>
+          <option value="farmer">👨‍🌾 Persona: Farmer / FPO</option>
+          <option value="logistics">🚚 Persona: Logistics Fleet</option>
+          <option value="analyst">🏛️ Persona: DoCA Market Intelligence</option>
+        </select>
+      </div>
+
+      <button type="button" class="cart-trigger-btn" id="cart-trigger-btn" title="View Direct Basket">
+        🛒
+        <span class="cart-badge" id="cart-badge-count" style="display: none;">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Live Intermediary Elimination Impact Ribbon -->
+  <section class="impact-ribbon">
+    <div class="impact-metric">
+      <div class="impact-metric-icon" style="color: var(--color-primary-light);">👨‍🌾</div>
+      <div class="impact-metric-info">
+        <div class="value" id="stat-farmers-count">136</div>
+        <div class="label">Farmers & FPOs Onboarded</div>
+      </div>
+    </div>
+
+    <div class="impact-metric">
+      <div class="impact-metric-icon" style="color: var(--color-saffron);">💰</div>
+      <div class="impact-metric-info">
+        <div class="value" id="stat-middlemen-wiped">₹1.24 L</div>
+        <div class="label">Intermediary Cuts Saved</div>
+      </div>
+    </div>
+
+    <div class="impact-metric">
+      <div class="impact-metric-icon" style="color: var(--color-primary-light);">📈</div>
+      <div class="impact-metric-info">
+        <div class="value" id="stat-farmer-gain-pct">+43.5%</div>
+        <div class="label">Avg Farmer Realization</div>
+      </div>
+    </div>
+
+    <div class="impact-metric">
+      <div class="impact-metric-icon" style="color: #60a5fa;">📉</div>
+      <div class="impact-metric-info">
+        <div class="value" id="stat-consumer-saving-pct">-28.2%</div>
+        <div class="label">Consumer Basket Savings</div>
+      </div>
+    </div>
+
+    <div class="impact-metric">
+      <div class="impact-metric-icon" style="color: #34d399;">🌱</div>
+      <div class="impact-metric-info">
+        <div class="value" id="stat-co2-saved">462 kg</div>
+        <div class="label">Fleet CO2 Avoided</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Page Main Content Area -->
+  <main class="page-container">
+
+    <!-- ====================================================================
+         VIEW 1: CONSUMER & BULK BUYER MARKETPLACE
+         ==================================================================== -->
+    <section class="view-section active" id="view-marketplace">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2>Direct Farm Produce Catalog</h2>
+          <p>Fresh harvest sourced directly from Indian FPO farm gates. No middleman commissions.</p>
+        </div>
+
+        <div class="buyer-mode-toggle">
+          <button type="button" class="buyer-mode-btn active" id="mode-consumer-btn">
+            🏠 Retail Consumer
+          </button>
+          <button type="button" class="buyer-mode-btn" id="mode-bulk-btn">
+            🏢 Bulk Buyer (HoReCa / Supermarkets)
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter and Search Bar -->
+      <div class="filter-bar-container">
+        <div class="search-input-wrap">
+          <span class="search-icon-pos">🔍</span>
+          <input type="text" id="marketplace-search" placeholder="Search crops, farmers, districts (e.g. Tomato, Nashik, Kolar)..." />
+        </div>
+
+        <div class="category-pills">
+          <button type="button" class="category-pill active" data-category="all">All Crops</button>
+          <button type="button" class="category-pill" data-category="Vegetables">Vegetables</button>
+          <button type="button" class="category-pill" data-category="Fruits">Fruits</button>
+          <button type="button" class="category-pill" data-category="Grains">Grains & Cereals</button>
+          <button type="button" class="category-pill" data-category="Spices">Spices</button>
+        </div>
+
+        <select class="role-badge-select" id="sort-select" onchange="Marketplace.filterAndRender()">
+          <option value="recent">Sort: Harvest Freshness</option>
+          <option value="price_low">Sort: Price (Low to High)</option>
+          <option value="price_high">Sort: Price (High to Low)</option>
+        </select>
+      </div>
+
+      <!-- Produce Grid -->
+      <div class="produce-grid" id="produce-grid">
+        <!-- Dynamically rendered by marketplace.js -->
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 2: FARMER & FPO PRODUCER PORTAL
+         ==================================================================== -->
+    <section class="view-section" id="view-farmer">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2>Farmer & FPO Aggregation Hub</h2>
+          <p>List fresh lots, access AI price recommendations, and track incoming direct orders with 100% escrow settlement.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="open-add-produce-btn">
+          ➕ List New Harvest Produce
+        </button>
+      </div>
+
+      <!-- Dashboard Mini Stats -->
+      <div class="impact-ribbon" style="margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+        <div class="impact-metric">
+          <div class="impact-metric-icon">📦</div>
+          <div class="impact-metric-info">
+            <div class="value" id="farmer-lot-count">8</div>
+            <div class="label">Active Listed Lots</div>
+          </div>
+        </div>
+        <div class="impact-metric">
+          <div class="impact-metric-icon">🌾</div>
+          <div class="impact-metric-info">
+            <div class="value" id="farmer-total-stock">42.5 MT</div>
+            <div class="label">Aggregated Stock</div>
+          </div>
+        </div>
+        <div class="impact-metric">
+          <div class="impact-metric-icon">💵</div>
+          <div class="impact-metric-info">
+            <div class="value">+42.8%</div>
+            <div class="label">Higher Income vs APMC Mandi</div>
+          </div>
+        </div>
+        <div class="impact-metric">
+          <div class="impact-metric-icon">🛡️</div>
+          <div class="impact-metric-info">
+            <div class="value">Escrow Protected</div>
+            <div class="label">Guaranteed Bank Settlement</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px;">
+        <!-- Active Produce Table -->
+        <div class="glass-card">
+          <h3 style="font-family: var(--font-heading); margin-bottom: 16px;">Active Farm Inventory</h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); text-align: left;">
+                  <th style="padding: 10px;">Crop & Variety</th>
+                  <th style="padding: 10px;">Category</th>
+                  <th style="padding: 10px;">Quantity</th>
+                  <th style="padding: 10px;">Direct Price</th>
+                  <th style="padding: 10px;">Location</th>
+                  <th style="padding: 10px;">Status</th>
+                  <th style="padding: 10px;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="farmer-inventory-tbody">
+                <!-- Rendered by farmer.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Incoming Orders & Dispatch Status -->
+        <div class="glass-card">
+          <h3 style="font-family: var(--font-heading); margin-bottom: 16px;">Incoming Direct Orders</h3>
+          <div id="farmer-orders-container">
+            <!-- Rendered by farmer.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 3: AI DEMAND FORECASTING & FAIR PRICE INTELLIGENCE
+         ==================================================================== -->
+    <section class="view-section" id="view-forecasting">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2>AI Agricultural Demand Forecasting & Fair Price Band</h2>
+          <p>Machine learning time-series model integrating seasonality, weather anomalies, and festival demand spikes.</p>
+        </div>
+        <span class="badge-tag badge-organic" id="market-status-badge">⚡ Steady Demand</span>
+      </div>
+
+      <div class="forecast-layout">
+        <!-- Main Chart Card -->
+        <div class="glass-card chart-card">
+          <div class="chart-controls">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="forecast-crop-select" style="font-size: 0.85rem; color: var(--text-muted);">Commodity:</label>
+              <select class="forecast-crop-select" id="forecast-crop-select">
+                <option value="tomato">Tomato (Hybrid & Desi)</option>
+                <option value="onion">Nashik Red Onion</option>
+                <option value="potato">Kufri Jyoti Potato</option>
+                <option value="chilli">Guntur Sannam Red Chilli</option>
+                <option value="apple">Royal Delicious Apples</option>
+                <option value="rice">Traditional Basmati 1121</option>
+              </select>
+            </div>
+
+            <div class="horizon-toggle">
+              <button type="button" class="horizon-btn" data-days="7">7 Days</button>
+              <button type="button" class="horizon-btn active" data-days="14">14 Days</button>
+              <button type="button" class="horizon-btn" data-days="30">30 Days</button>
+            </div>
+          </div>
+
+          <h3 id="forecast-crop-title" style="font-size: 1.1rem; margin-bottom: 14px; font-family: var(--font-heading);">
+            Crop Demand & Price Corridor
+          </h3>
+
+          <div class="chart-wrapper">
+            <canvas id="forecast-chart-canvas"></canvas>
+          </div>
+
+          <!-- Farmer Actionable Advice Card -->
+          <div style="margin-top: 20px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 14px;">
+            <h4 style="color: var(--color-primary-light); font-size: 0.88rem; margin-bottom: 4px;">🎯 DoCA Actionable Farmer Advisory:</h4>
+            <p id="forecast-advice-text" style="font-size: 0.84rem; color: var(--text-main); line-height: 1.5;"></p>
+          </div>
+        </div>
+
+        <!-- Right Side Panel: DoCA Fair Price Corridor & Market Drivers -->
+        <div class="forecast-side-panel">
+          <div class="price-band-widget">
+            <h4 style="font-family: var(--font-heading); margin-bottom: 12px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+              🏛️ DoCA Fair Price Corridor
+            </h4>
+            <div class="band-row">
+              <span class="band-label">Cost of Production (A2+FL):</span>
+              <span class="band-val" id="pb-farmer-cost">₹14.5/kg</span>
+            </div>
+            <div class="band-row">
+              <span class="band-label">Swaminathan MSP (C2+50%):</span>
+              <span class="band-val" style="color: var(--color-saffron);" id="pb-swaminathan-msp">₹21.8/kg</span>
+            </div>
+            <div class="band-row">
+              <span class="band-label">KisanSetu Direct Farmer Payout:</span>
+              <span class="band-val" style="color: var(--color-primary-light); font-size: 1.1rem;" id="pb-rec-direct">₹30.0/kg</span>
+            </div>
+            <div class="band-row">
+              <span class="band-label">Consumer Fair Ceiling Price:</span>
+              <span class="band-val" style="color: #60a5fa;" id="pb-consumer-ceiling">₹45.0/kg</span>
+            </div>
+            <div class="band-row">
+              <span class="band-label">Typical Retail Mandi Price:</span>
+              <span class="band-val" style="color: var(--color-danger);" id="pb-trad-retail">₹55.0/kg</span>
+            </div>
+            <div class="band-row">
+              <span class="band-label">Traditional Middleman Cut:</span>
+              <span class="band-val" style="color: var(--color-danger);" id="pb-middlemen-spread">₹34.0/kg (62%)</span>
+            </div>
+          </div>
+
+          <div class="glass-card" style="padding: 18px;">
+            <h4 style="font-family: var(--font-heading); margin-bottom: 12px; font-size: 1.05rem;">
+              🌪️ AI Multi-Factor Drivers
+            </h4>
+            <div id="market-drivers-list">
+              <!-- Rendered by forecasting.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 4: LOGISTICS & SMART ROUTE OPTIMIZER
+         ==================================================================== -->
+    <section class="view-section" id="view-logistics">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2>AI Logistics Multi-Stop Route Optimizer (Milk Run VRP)</h2>
+          <p>Consolidates fragmented farm-gate pickups into high-efficiency cold corridors, eliminating empty miles and transit delays.</p>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <select class="role-badge-select" id="logistics-corridor-select">
+            <option value="kolar-bengaluru">Kolar Horti Hub to Bengaluru Urban</option>
+            <option value="nashik-mumbai">Nashik Agro Cluster to Mumbai Metro</option>
+            <option value="ludhiana-delhi">Punjab Grain Belt to Delhi-NCR Grid</option>
+          </select>
+          <button type="button" class="btn btn-primary" id="run-vrp-optimize-btn">
+            ⚡ Run AI Route Optimizer
+          </button>
+          <button type="button" class="btn btn-saffron" id="simulate-truck-btn">
+            🚛 Simulate Live Fleet
+          </button>
+        </div>
+      </div>
+
+      <div class="logistics-layout">
+        <!-- Interactive Leaflet Map -->
+        <div class="glass-card" style="padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div>
+              <h3 id="corridor-name-title" style="font-size: 1.15rem; font-family: var(--font-heading);">
+                Kolar Horti Hub to Bengaluru Urban Cold Corridor
+              </h3>
+              <span id="corridor-vehicle-tag" style="font-size: 0.8rem; color: var(--color-saffron);">
+                🚛 Refrigerated 4T Tata 407 (Temperature Controlled 8°C)
+              </span>
+            </div>
+            <div style="display: flex; gap: 8px; font-size: 0.75rem;">
+              <span style="color: #3b82f6;">● Cold Hub</span>
+              <span style="color: #10b981;">● Farm Pickup</span>
+              <span style="color: #f59e0b;">● Direct Buyer</span>
+            </div>
+          </div>
+
+          <div id="logistics-map" class="map-container"></div>
+        </div>
+
+        <!-- Logistics Sidebar: Savings & Turn-by-Turn Manifest -->
+        <div class="logistics-sidebar">
+          <div class="efficiency-metrics-grid">
+            <div class="metric-mini-card">
+              <div class="val" id="metric-dist-saved">53.5 km</div>
+              <div class="desc">Distance Saved</div>
+            </div>
+            <div class="metric-mini-card">
+              <div class="val" id="metric-efficiency-pct">+38.8%</div>
+              <div class="desc">Transit Efficiency</div>
+            </div>
+            <div class="metric-mini-card">
+              <div class="val" id="metric-fuel-saved">10.3 L</div>
+              <div class="desc">Diesel Saved</div>
+            </div>
+            <div class="metric-mini-card">
+              <div class="val" id="metric-co2-saved">27.6 kg</div>
+              <div class="desc">CO2 Reduced</div>
+            </div>
+            <div class="metric-mini-card">
+              <div class="val" id="metric-fuel-cost-saved">₹948</div>
+              <div class="desc">Freight Cost Saved</div>
+            </div>
+            <div class="metric-mini-card">
+              <div class="val" id="metric-cargo-total">2,420 kg</div>
+              <div class="desc">Aggregated Cargo</div>
+            </div>
+          </div>
+
+          <!-- Waypoints Timeline -->
+          <div class="glass-card" style="padding: 18px;">
+            <h4 style="font-family: var(--font-heading); margin-bottom: 12px; font-size: 1.05rem;">
+              📋 AI Route Manifest & ETAs
+            </h4>
+            <div class="waypoint-timeline" id="waypoints-timeline-list">
+              <!-- Rendered by logistics.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VIEW 5: PRICE TRANSPARENCY & INTERMEDIARY ELIMINATION CALCULATOR
+         ==================================================================== -->
+    <section class="view-section" id="view-transparency">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <h2>Intermediary Margin Elimination & Fair Pricing Model</h2>
+          <p>Inspect how the traditional 5-middleman system siphons up to 65% of the consumer rupee, and how direct procurement fixes it.</p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label for="transparency-crop-select" style="font-size: 0.85rem; color: var(--text-muted);">Commodity:</label>
+          <select class="forecast-crop-select" id="transparency-crop-select">
+            <option value="tomato">Tomato (Hybrid & Desi)</option>
+            <option value="onion">Nashik Red Onion</option>
+            <option value="potato">Kufri Jyoti Potato</option>
+            <option value="chilli">Guntur Sannam Red Chilli</option>
+            <option value="apple">Royal Delicious Apples</option>
+            <option value="rice">Traditional Basmati 1121</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Volume Slider Box -->
+      <div class="volume-slider-box">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <label for="volume-slider" style="font-weight: 700; font-size: 0.95rem;">
+            Procurement Quantity Volume:
+          </label>
+          <span id="volume-slider-display" style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: var(--color-primary-light);">
+            500 kg (0.5 MT)
+          </span>
+        </div>
+        <input type="range" id="volume-slider" class="slider-range" min="50" max="5000" step="50" value="500" />
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim);">
+          <span>50 kg (Household / Colony Order)</span>
+          <span>1,000 kg (Restaurant / Retailer)</span>
+          <span>5,000 kg (Institutional / Wholesale)</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Impact Calculation Cards -->
+      <div class="impact-ribbon" style="margin-bottom: 24px; border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+        <div class="impact-metric">
+          <div class="impact-metric-icon" style="color: var(--color-primary-light);">💚</div>
+          <div class="impact-metric-info">
+            <div class="value" id="calc-consumer-savings-rs">₹9,500</div>
+            <div class="label" id="calc-consumer-savings-pct">-28% Cheaper for Consumers</div>
+          </div>
+        </div>
+        <div class="impact-metric">
+          <div class="impact-metric-icon" style="color: var(--color-saffron);">👨‍🌾</div>
+          <div class="impact-metric-info">
+            <div class="value" id="calc-farmer-gain-rs">+₹6,650</div>
+            <div class="label" id="calc-farmer-gain-pct">+43% Higher Income for Farmers</div>
+          </div>
+        </div>
+        <div class="impact-metric">
+          <div class="impact-metric-icon" style="color: var(--color-danger);">🚫</div>
+          <div class="impact-metric-info">
+            <div class="value" id="calc-middlemen-wiped-rs">₹19,150</div>
+            <div class="label">Middleman Margins Wiped</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Side-by-Side Comparison -->
+      <div class="transparency-layout">
+        <!-- Traditional Middleman Chain -->
+        <div class="glass-card chain-breakdown-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-heading); color: var(--color-danger);">
+              Traditional Multi-Middleman Chain
+            </h3>
+            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.2); color: var(--color-danger); border: 1px solid var(--color-danger);">
+              5 Intermediary Handovers
+            </span>
+          </div>
+
+          <!-- Share bar -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">Farmer Share of Consumer Rupee:</div>
+            <div style="background: #1e293b; height: 24px; border-radius: var(--radius-sm); overflow: hidden; display: flex;">
+              <div id="bar-trad-farmer-share" style="background: #ef4444; width: 32%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: bold; color: white;">
+                Farmer: 32%
+              </div>
+              <div style="background: #334155; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: #94a3b8;">
+                Middlemen & Waste: 68%
+              </div>
+            </div>
+          </div>
+
+          <div class="chain-step highlight-loss">
+            <div class="chain-step-title">1. Farmer Farm-Gate Payout</div>
+            <div class="chain-step-cut" id="step-trad-farmer">₹16.7/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">2. Village Middleman / Aggregator Cut</div>
+            <div class="chain-step-cut" style="color: var(--color-danger);" id="step-trad-village">+₹4.4/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">3. Mandi Commission Agent (APMC Arhtiya)</div>
+            <div class="chain-step-cut" style="color: var(--color-danger);" id="step-trad-mandi">+₹6.6/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">4. Fragmented Interstate Transport Broker</div>
+            <div class="chain-step-cut" style="color: var(--color-danger);" id="step-trad-transit">+₹5.5/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">5. Secondary City Wholesaler Markup</div>
+            <div class="chain-step-cut" style="color: var(--color-danger);" id="step-trad-wholesaler">+₹8.2/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">6. Local Retailer / Vendor Markup</div>
+            <div class="chain-step-cut" style="color: var(--color-danger);" id="step-trad-retailer">+₹13.6/kg</div>
+          </div>
+          <div class="chain-step" style="background: rgba(239, 68, 68, 0.12); border-color: var(--color-danger);">
+            <div class="chain-step-title" style="font-weight: 800;">Final Consumer Price (Supermarket / Mandi)</div>
+            <div class="chain-step-cut" style="color: #fff;" id="step-trad-final">₹55.0/kg</div>
+          </div>
+        </div>
+
+        <!-- KisanSetu Direct Model -->
+        <div class="glass-card chain-breakdown-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-heading); color: var(--color-primary-light);">
+              KisanSetu Direct DoCA Model
+            </h3>
+            <span class="badge-tag badge-organic">
+              Direct Farmer ➔ Buyer
+            </span>
+          </div>
+
+          <!-- Share bar -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px;">Farmer Share of Consumer Rupee:</div>
+            <div style="background: #1e293b; height: 24px; border-radius: var(--radius-sm); overflow: hidden; display: flex;">
+              <div id="bar-direct-farmer-share" style="background: #10b981; width: 83%; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: bold; color: white;">
+                Farmer: 83%
+              </div>
+              <div style="background: #065f46; flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: #a7f3d0;">
+                Logistics & Tech: 17%
+              </div>
+            </div>
+          </div>
+
+          <div class="chain-step highlight-gain">
+            <div class="chain-step-title">1. Direct Farmer Bank Settlement</div>
+            <div class="chain-step-cut" style="color: var(--color-primary-light);" id="step-direct-farmer">₹30.0/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">2. AI-Optimized Cold Milk-Run Logistics</div>
+            <div class="chain-step-cut" style="color: #60a5fa;" id="step-direct-logistics">+₹4.5/kg</div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-step-title">3. Escrow & Digital Platform Operation Fee (3%)</div>
+            <div class="chain-step-cut" style="color: var(--color-saffron);" id="step-direct-platform">+₹1.5/kg</div>
+          </div>
+          <div class="chain-step" style="background: rgba(16, 185, 129, 0.15); border-color: var(--color-primary);">
+            <div class="chain-step-title" style="font-weight: 800;">Final Consumer Price (Direct to Doorstep)</div>
+            <div class="chain-step-cut" style="color: #fff;" id="step-direct-final">₹36.0/kg</div>
+          </div>
+
+          <div style="margin-top: 20px; padding: 14px; background: rgba(255, 255, 255, 0.02); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+            ✅ <strong>Net National Economic Benefit:</strong> By eliminating 4 middlemen tiers, the farmer receives <strong>+₹13.3/kg more income</strong>, while the consumer saves <strong>₹19.0/kg on daily kitchen grocery essentials</strong>. Post-harvest transit wastage drops from 24% down to under 3.5%.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       MODALS & DRAWERS
+       ==================================================================== -->
+
+  <!-- Slide-out Shopping Cart Drawer -->
+  <div class="cart-drawer-overlay" id="cart-drawer-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <div class="cart-title">
+        <span>🛒</span>
+        <span>Your Direct Farm Basket</span>
+      </div>
+      <button type="button" class="close-drawer-btn" id="close-cart-btn">&times;</button>
+    </div>
+
+    <div class="cart-items-list" id="cart-items-container">
+      <!-- Items dynamically populated -->
+    </div>
+
+    <div class="cart-summary-box" id="cart-summary-container" style="display: none;">
+      <div class="summary-savings-banner">
+        <span>🎉</span>
+        <span>You save <strong id="cart-savings-val">₹0</strong> & Farmer gains <strong id="cart-farmer-gain-val">₹0</strong>!</span>
+      </div>
+
+      <div class="summary-row">
+        <span>Produce Subtotal:</span>
+        <span id="cart-subtotal-val">₹0</span>
+      </div>
+      <div class="summary-row">
+        <span>AI Consolidated Cold Logistics:</span>
+        <span id="cart-logistics-val">₹0</span>
+      </div>
+      <div class="summary-row">
+        <span>Platform & Escrow Fee (3%):</span>
+        <span id="cart-platform-val">₹0</span>
+      </div>
+      <div class="summary-row total-row">
+        <span>Total Payable:</span>
+        <span id="cart-total-val">₹0</span>
+      </div>
+
+      <button type="button" class="btn btn-primary" id="cart-checkout-btn" style="width: 100%; margin-top: 14px;">
+        Proceed to Direct Checkout 🔒
+      </button>
+    </div>
+  </aside>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>Secure Direct Procurement Checkout</h3>
+        <button type="button" class="close-drawer-btn" onclick="Marketplace.closeCheckoutModal()">&times;</button>
+      </div>
+      <form class="modal-body" id="checkout-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="buyer-name-input">Full Name / Business Name *</label>
+            <input type="text" id="buyer-name-input" class="form-control" placeholder="e.g. Radhika Verma" required />
+          </div>
+          <div class="form-group">
+            <label for="buyer-phone-input">Contact Phone *</label>
+            <input type="tel" id="buyer-phone-input" class="form-control" placeholder="+91 98765 43210" required />
+          </div>
+          <div class="form-group full-col">
+            <label for="buyer-address-input">Delivery Address *</label>
+            <textarea id="buyer-address-input" class="form-control" rows="2" placeholder="House/Flat No, Street, Landmark" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="buyer-district-input">District / City *</label>
+            <input type="text" id="buyer-district-input" class="form-control" value="Bengaluru Urban" required />
+          </div>
+          <div class="form-group">
+            <label for="buyer-slot-select">Preferred Delivery Slot</label>
+            <select id="buyer-slot-select" class="form-control">
+              <option>Tomorrow Morning (7:00 AM - 10:00 AM)</option>
+              <option>Tomorrow Afternoon (1:00 PM - 4:00 PM)</option>
+              <option>Tomorrow Evening (5:00 PM - 8:00 PM)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-md); padding: 12px; margin: 16px 0; font-size: 0.8rem; color: var(--text-main);">
+          🛡️ <strong>Escrow Guarantee:</strong> Payment is held securely by DoCA Escrow and only released to the farmer upon delivery verification of harvest freshness.
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" id="cancel-checkout-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submit-order-btn">
+            🔒 Confirm Order (Escrow Protected)
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Order Receipt Confirmation Modal -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-window" style="max-width: 500px;">
+      <div class="modal-body" id="receipt-modal-body">
+        <!-- Rendered by marketplace.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Produce Modal for Farmers -->
+  <div class="modal-overlay" id="add-produce-modal">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>List Fresh Harvest Produce</h3>
+        <button type="button" class="close-drawer-btn" id="close-add-produce-btn">&times;</button>
+      </div>
+      <form class="modal-body" id="add-produce-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="new-farmer-name">Farmer / Producer Name *</label>
+            <input type="text" id="new-farmer-name" class="form-control" placeholder="e.g. Rameshwar Patil" required />
+          </div>
+          <div class="form-group">
+            <label for="new-farmer-phone">Phone Number *</label>
+            <input type="tel" id="new-farmer-phone" class="form-control" placeholder="+91 98231 44520" required />
+          </div>
+          <div class="form-group">
+            <label for="new-fpo-name">FPO / Cooperative Name</label>
+            <input type="text" id="new-fpo-name" class="form-control" placeholder="e.g. Godavari Valley FPO" />
+          </div>
+          <div class="form-group">
+            <label for="new-crop-name">Crop Name *</label>
+            <input type="text" id="new-crop-name" class="form-control" placeholder="e.g. Tomato, Onion, Wheat" required />
+          </div>
+          <div class="form-group">
+            <label for="new-variety">Crop Variety</label>
+            <input type="text" id="new-variety" class="form-control" placeholder="e.g. Abhinav Hybrid F1" />
+          </div>
+          <div class="form-group">
+            <label for="new-category">Category</label>
+            <select id="new-category" class="form-control">
+              <option value="Vegetables">Vegetables</option>
+              <option value="Fruits">Fruits</option>
+              <option value="Grains">Grains & Cereals</option>
+              <option value="Spices">Spices</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="new-quantity">Available Quantity (kg) *</label>
+            <input type="number" id="new-quantity" class="form-control" min="10" placeholder="e.g. 2500" required />
+          </div>
+          <div class="form-group">
+            <label for="new-direct-price">Direct Asking Price (₹/kg) *</label>
+            <input type="number" id="new-direct-price" class="form-control" step="0.5" placeholder="e.g. 30" required />
+          </div>
+
+          <!-- Dynamic Live AI Price Guidance Box -->
+          <div class="form-group full-col" id="farmer-price-guidance-box">
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 10px; font-size: 0.8rem; color: var(--text-main);">
+              💡 <strong>AI Price Recommendation:</strong> Select a crop to receive DoCA fair benchmark pricing.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="new-location">Farm Village / Cluster *</label>
+            <input type="text" id="new-location" class="form-control" placeholder="e.g. Pimpalgaon Baswant" required />
+          </div>
+          <div class="form-group">
+            <label for="new-district">District *</label>
+            <input type="text" id="new-district" class="form-control" placeholder="e.g. Nashik" required />
+          </div>
+          <div class="form-group">
+            <label for="new-state">State *</label>
+            <input type="text" id="new-state" class="form-control" placeholder="e.g. Maharashtra" required />
+          </div>
+          <div class="form-group">
+            <label for="new-grade">Quality Grade</label>
+            <select id="new-grade" class="form-control">
+              <option value="Grade A">Grade A (Premium)</option>
+              <option value="Export Grade">Export Grade</option>
+              <option value="Standard Grade">Standard Table Grade</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="new-harvest-date">Harvest Date</label>
+            <input type="date" id="new-harvest-date" class="form-control" />
+          </div>
+          <div class="form-group" style="justify-content: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="new-organic" style="width: 18px; height: 18px; accent-color: var(--color-primary);" />
+              <span style="font-size: 0.88rem; font-weight: 600;">100% Certified Organic</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" id="cancel-add-produce-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish to Marketplace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Application Scripts -->
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/marketplace.js"></script>
+  <script src="/static/js/farmer.js"></script>
+  <script src="/static/js/forecasting.js"></script>
+  <script src="/static/js/logistics.js"></script>
+  <script src="/static/js/price_transparency.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
