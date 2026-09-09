@@ -4,8 +4,7 @@
  * Manages tab routing, role synchronization, live platform metrics, and toasts.
  */
 
-const App = {
-  activeTab: 'marketplace',
+const API_URL = 'https://your-backend-service.onrender.com'; // Replace with your live backend URL
 
   init() {
     this.bindNavigation();
