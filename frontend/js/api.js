@@ -3,9 +3,7 @@
  * SIH Problem Statement 26033 - DoCA
  */
 
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000/api'
-  : '/api';
+const API_BASE_URL = "https://your-python-backend.onrender.com"; // Replace with your Render/Railway live backend URL
 
 const API = {
   async getStats() {
