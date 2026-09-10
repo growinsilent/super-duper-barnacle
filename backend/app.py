@@ -430,17 +430,13 @@ def get_price_transparency_data(crop: str = "tomato"):
         }
     }
 
-# Mount Frontend Static Directory
+# Mount Frontend Static Directory at root so relative asset paths
+# (css/style.css, js/api.js, favicon.svg) resolve correctly both when
+# served locally by FastAPI and when deployed on Vercel.
+# API routes (/api/*) defined above take precedence over this mount.
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 if os.path.exists(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
-
-@app.get("/")
-def serve_index():
-    index_file = os.path.join(FRONTEND_DIR, "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
-    return {"message": "Frontend not found. Please verify frontend/index.html"}
+    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
 if __name__ == "__main__":
     import uvicorn

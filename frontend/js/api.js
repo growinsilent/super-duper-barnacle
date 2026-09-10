@@ -1,13 +1,18 @@
 /**
  * KisanSetu-AI: API Client
  * SIH Problem Statement 26033 - DoCA
+ * Uses relative URLs so the same frontend works both when served by the
+ * local FastAPI backend (http://localhost:8000) and when deployed on Vercel
+ * with a serverless / API proxy (vercel.json rewrites /api/* to the backend).
  */
 
-const API_BASE_URL = "https://your-python-backend.onrender.com"; // Replace with your Render/Railway live backend URL
+// Leave empty to use same-origin relative URLs. This avoids CORS and lets
+// Vercel's `rewrites` proxy /api/* to the live backend automatically.
+const API_BASE = "";
 
 const API = {
   async getStats() {
-    const res = await fetch(`${API_BASE}/stats`);
+    const res = await fetch(`${API_BASE}/api/stats`);
     if (!res.ok) throw new Error('Failed to fetch platform stats');
     return await res.json();
   },
@@ -19,19 +24,19 @@ const API = {
     if (filters.organic) query.append('organic', filters.organic);
     if (filters.sort_by) query.append('sort_by', filters.sort_by);
 
-    const res = await fetch(`${API_BASE}/produce?${query.toString()}`);
+    const res = await fetch(`${API_BASE}/api/produce?${query.toString()}`);
     if (!res.ok) throw new Error('Failed to fetch produce catalog');
     return await res.json();
   },
 
   async getProduceById(id) {
-    const res = await fetch(`${API_BASE}/produce/${id}`);
+    const res = await fetch(`${API_BASE}/api/produce/${id}`);
     if (!res.ok) throw new Error('Failed to load produce details');
     return await res.json();
   },
 
   async createProduce(produceData) {
-    const res = await fetch(`${API_BASE}/produce`, {
+    const res = await fetch(`${API_BASE}/api/produce`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(produceData)
@@ -44,7 +49,7 @@ const API = {
   },
 
   async deleteProduce(id) {
-    const res = await fetch(`${API_BASE}/produce/${id}`, {
+    const res = await fetch(`${API_BASE}/api/produce/${id}`, {
       method: 'DELETE'
     });
     if (!res.ok) throw new Error('Failed to delete produce listing');
@@ -52,13 +57,13 @@ const API = {
   },
 
   async getOrders() {
-    const res = await fetch(`${API_BASE}/orders`);
+    const res = await fetch(`${API_BASE}/api/orders`);
     if (!res.ok) throw new Error('Failed to fetch orders');
     return await res.json();
   },
 
   async createOrder(orderPayload) {
-    const res = await fetch(`${API_BASE}/orders`, {
+    const res = await fetch(`${API_BASE}/api/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderPayload)
@@ -71,7 +76,7 @@ const API = {
   },
 
   async updateOrderStatus(orderId, newStatus) {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+    const res = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
@@ -81,19 +86,19 @@ const API = {
   },
 
   async getForecast(crop = 'tomato', days = 14) {
-    const res = await fetch(`${API_BASE}/forecast?crop=${encodeURIComponent(crop)}&days=${days}`);
+    const res = await fetch(`${API_BASE}/api/forecast?crop=${encodeURIComponent(crop)}&days=${days}`);
     if (!res.ok) throw new Error('Failed to fetch AI forecast');
     return await res.json();
   },
 
   async getCorridors() {
-    const res = await fetch(`${API_BASE}/logistics/corridors`);
+    const res = await fetch(`${API_BASE}/api/logistics/corridors`);
     if (!res.ok) throw new Error('Failed to fetch corridors');
     return await res.json();
   },
 
   async optimizeRoute(corridorId = 'kolar-bengaluru') {
-    const res = await fetch(`${API_BASE}/logistics/optimize?corridor_id=${encodeURIComponent(corridorId)}`, {
+    const res = await fetch(`${API_BASE}/api/logistics/optimize?corridor_id=${encodeURIComponent(corridorId)}`, {
       method: 'POST'
     });
     if (!res.ok) throw new Error('Failed to optimize logistics route');
@@ -101,7 +106,7 @@ const API = {
   },
 
   async getPriceTransparency(crop = 'tomato') {
-    const res = await fetch(`${API_BASE}/transparency?crop=${encodeURIComponent(crop)}`);
+    const res = await fetch(`${API_BASE}/api/transparency?crop=${encodeURIComponent(crop)}`);
     if (!res.ok) throw new Error('Failed to fetch price transparency data');
     return await res.json();
   }

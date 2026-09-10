@@ -4,8 +4,7 @@
  * Manages tab routing, role synchronization, live platform metrics, and toasts.
  */
 
-const API_URL = 'https://your-backend-service.onrender.com'; // Replace with your live backend URL
-
+const App = {
   init() {
     this.bindNavigation();
     this.bindRoleSelector();
